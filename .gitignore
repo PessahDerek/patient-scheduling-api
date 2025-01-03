@@ -1,0 +1,7 @@
+node_modules
+.idea
+dist
+temp
+src/database/migrations
+pnpm-lock.yaml
+package-lock.json
