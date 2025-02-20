@@ -1,13 +1,20 @@
 import {BeforeCreate, Entity, Enum, Property} from "@mikro-orm/core";
 import {getUniqueString, hashString, isValidPhoneNumber} from "../../utils/methods/shortmethods";
 
-enum UserRole {
+export enum UserRole {
     DOCTOR = "doctor",
     PATIENT = "patient",
+    ADMIN = "admin",
 }
 
-@Entity()
-export default class User {
+export enum Gender {
+    MALE = "male",
+    FEMALE = "female",
+    UNKNOWN = "unknown",
+}
+
+@Entity({abstract: true})
+export class UserMap {
     @Property({primary: true, type: "string"})
     id: string = getUniqueString();
 
@@ -22,22 +29,31 @@ export default class User {
     @Enum({items: () => UserRole})
     role: UserRole = UserRole.PATIENT;
     @Property({hidden: true})
-    _password!: string;
-    @Property({hidden: true})
-    get password() {
-        return this._password
-    }
-    set password(value: string) {
-        this._password = hashString(value);
+    password!: string;
+    @Enum({items: () => Gender, nullable: true})
+    gender?: Gender = Gender.UNKNOWN;
+
+    complete() {
+        if (this.gender === Gender.UNKNOWN)
+            return false
+        if (this.phone === "0000000000")
+            return false
+        return !(this.firstName + this.lastName + this.email + this.phone).toLowerCase().includes("default");
     }
 
     @BeforeCreate()
     beforeCreate() {
         try {
             isValidPhoneNumber(this.phone);
-        } catch (e: unknown) {
-            throw new Error((e as Error).message);
+            this.password = hashString(this.password);
+        } catch (error: unknown) {
+            throw error;
         }
     }
+}
+
+@Entity()
+export default class User extends UserMap{
+
 }
 

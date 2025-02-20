@@ -1,81 +1,55 @@
-import express, {Application, Router} from "express";
-import dotenv from "dotenv";
-import cors from 'cors'
-import {Server} from "node:http";
-import {EntityManager, MikroORM, RequestContext} from "@mikro-orm/core";
-
-dotenv.config();
+import * as http from "node:net";
+import {EntityManager, EntityRepository, MikroORM, RequestContext} from "@mikro-orm/core";
+import express, {NextFunction} from "express";
+import cors from "cors";
+import indexRouter from "./routes/root";
+import config from "../mikro-orm.config";
+import User from "./database/models/user.entity";
+import {WorkingDay} from "./database/models/workingDay.entity";
+import {Schedule} from "./database/models/schedule.entity";
+import {Appointment} from "./database/models/appointment.entity";
 
 export const api = {} as {
-    server: Server,
+    server: http.Server,
     orm: MikroORM,
-    em: EntityManager
+    em: EntityManager,
+    users: EntityRepository<User>,
+    schedules: EntityRepository<Schedule>,
+    scheduleDay: EntityRepository<WorkingDay>,
+    appointments: EntityRepository<Appointment>,
 }
 
+const application = async () => {
+    api.orm = await MikroORM.init(config);
+    api.em = api.orm.em;
+    api.users = api.em.getRepository(User)
+    api.scheduleDay = api.em.getRepository(WorkingDay)
+    api.schedules = api.em.getRepository(Schedule)
+    api.appointments = api.em.getRepository(Appointment)
 
-class App {
-    app: Application | undefined;
-    origins: string[] = [];
-    port: number = 5000;
+    const app = express()
+    app.use(express.json({limit: '50mb'}));
+    app.use(cors({
+        origin: ["http://localhost:3001", "http://localhost:3002"],
+        credentials: true,
+    }))
+    app.use((_req: express.Request, _res: express.Response, next: NextFunction) => {
+        RequestContext.create(api.em, next);
+    })
 
-    constructor(routers: Router[] = [], middlewareList: [] = []) {
-        this.app = express();
-        this.getEnvs()
-        this.initializeMikroOrm()
-            .catch(() => {
-            })
-        this.initializeMiddleware(middlewareList)
-        this.initializeRoutes(routers)
-    }
+    app.use("/api", indexRouter)
 
-    private getEnvs() {
-        this.port = Number(process.env.PORT ?? 5000)
-    }
+    const port = Number(process.env?.PORT ?? 5000);
 
-    initializeMikroOrm() {
-        return new Promise(async (resolve, reject) => {
-            try {
-                api.orm = await MikroORM.init()
-                api.em = api.orm.em
-                resolve("Database Connected")
-            } catch (err) {
-                reject(err)
-            }
-        })
-    }
-
-    private initializeMiddleware(middlewareList: []) {
-        if (!this.app)
-            return
-        for (const middleware of middlewareList) {
-            this.app.use(middleware);
-        }
-        this.app.use(cors({
-            origin: [...this.origins],
-            credentials: true,
-        }))
-        this.app.use((_req, _res, next) => {
-            RequestContext.create(api.orm.em, next)
-        })
-    }
-
-    private initializeRoutes(routers: Router[]): void {
-        if (!this.app)
-            return;
-        for (const router of routers) {
-            this.app.use(router);
-        }
-    }
-
-    listen(port: number = this.port) {
-        if (!this.app)
-            throw new Error("No application instance")
-        api.server = this.app.listen(port, () => {
-            console.log("Server running on port: ", port);
-        });
-    }
+    api.server = app.listen(port, () => {
+        console.log(`Server started on port ${port}`);
+    })
 }
 
-export default App;
+application()
+    .catch(err => console.log(err))
+;
+// export default application;
+
 
 
