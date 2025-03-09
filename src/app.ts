@@ -1,6 +1,6 @@
 import * as http from "node:net";
 import {EntityManager, EntityRepository, MikroORM, RequestContext} from "@mikro-orm/core";
-import express, {NextFunction} from "express";
+import express, {NextFunction, urlencoded} from "express";
 import cors from "cors";
 import indexRouter from "./routes/root";
 import config from "../mikro-orm.config";
@@ -8,6 +8,8 @@ import User from "./database/models/user.entity";
 import {WorkingDay} from "./database/models/workingDay.entity";
 import {Schedule} from "./database/models/schedule.entity";
 import {Appointment} from "./database/models/appointment.entity";
+import morgan from "morgan";
+import bodyParser from "body-parser";
 
 export const api = {} as {
     server: http.Server,
@@ -28,11 +30,15 @@ const application = async () => {
     api.appointments = api.em.getRepository(Appointment)
 
     const app = express()
-    app.use(express.json({limit: '50mb'}));
+    // app.use(express.json({limit: '50mb'}));
+    // app.use(express.urlencoded({extended: true}));
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({extended: true}));
     app.use(cors({
         origin: ["http://localhost:3001", "http://localhost:3002"],
         credentials: true,
     }))
+    app.use(morgan("dev"))
     app.use((_req: express.Request, _res: express.Response, next: NextFunction) => {
         RequestContext.create(api.em, next);
     })

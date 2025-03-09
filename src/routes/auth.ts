@@ -1,12 +1,12 @@
 import express from "express";
-import {handleCreateAccount} from "../controllers/auth/signup";
+import {userSignup} from "../controllers/auth/signup";
 import {handleUserLogins} from "../controllers/auth/login";
 
 
 const authRouter = express.Router();
 
 authRouter
-    .post('/signup', handleCreateAccount)
+    .post('/signup', userSignup)
     .post('/login', handleUserLogins)
 
 export default authRouter;

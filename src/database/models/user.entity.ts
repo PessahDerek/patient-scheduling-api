@@ -1,5 +1,6 @@
-import {BeforeCreate, Entity, Enum, Property} from "@mikro-orm/core";
+import {BeforeCreate, Collection, Entity, Enum, OneToMany, OnLoad, Property} from "@mikro-orm/core";
 import {getUniqueString, hashString, isValidPhoneNumber} from "../../utils/methods/shortmethods";
+import {Schedule} from "./schedule.entity";
 
 export enum UserRole {
     DOCTOR = "doctor",
@@ -32,6 +33,11 @@ export class UserMap {
     password!: string;
     @Enum({items: () => Gender, nullable: true})
     gender?: Gender = Gender.UNKNOWN;
+    @Property({type: "blob", nullable: true})
+    profile?: Blob | null = null;
+
+    @OneToMany({entity: () => Schedule, mappedBy: "doctor"})
+    schedules: Collection<Schedule> = new Collection(Schedule);
 
     complete() {
         if (this.gender === Gender.UNKNOWN)
@@ -40,6 +46,19 @@ export class UserMap {
             return false
         return !(this.firstName + this.lastName + this.email + this.phone).toLowerCase().includes("default");
     }
+
+    @Property({getter: true, persist: false})
+    simple() {
+        return {
+            id: this.id,
+            name: `${this.firstName} ${this.lastName}`,
+            email: this.email,
+            phone: this.phone,
+            gender: this.gender,
+            role: this.role
+        }
+    }
+
 
     @BeforeCreate()
     beforeCreate() {
@@ -53,7 +72,6 @@ export class UserMap {
 }
 
 @Entity()
-export default class User extends UserMap{
-
+export default class User extends UserMap {
 }
 

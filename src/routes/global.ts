@@ -1,8 +1,9 @@
 import express from "express";
 import {getUsers} from "../controllers/global/getUsers";
-import authorization from "../middleware/authorization";
 import {getSchedule, getWorkingDays} from "../controllers/admin";
-import {getAllAppointments} from "../controllers/global/appointments";
+import {cancelAppointment, getAllAppointments} from "../controllers/global/appointments";
+import {createAppointment} from "../controllers/admin/appointments";
+import authorization from "../middleware/authorization";
 
 
 const globalRoutes = express.Router();
@@ -12,7 +13,10 @@ globalRoutes
     .get('/doctors', getUsers)
     .get('/working-days', getWorkingDays)
     .get('/schedules', getSchedule)
-    .get('/all-appointments/:doc_id?/:between?/:date?', getAllAppointments)
+    .get('/all-appointments', getAllAppointments)
+    // .get('/all-appointments/:patient_id?/:doc_id?/:between?/:date?', getAllAppointments)
+    .post("/book", authorization, createAppointment)
+    .post("/cancel-appointment", authorization, cancelAppointment)
 
 export default globalRoutes;
 

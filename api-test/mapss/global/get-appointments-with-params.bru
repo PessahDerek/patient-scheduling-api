@@ -1,0 +1,16 @@
+meta {
+  name: get-appointments-with-params
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:5000/api/app/all-appointments/?doc_id=nrKUcCnY&date=2025-02-09T21%3A00%3A00.000Z
+  body: none
+  auth: none
+}
+
+params:query {
+  doc_id: nrKUcCnY
+  date: 2025-02-09T21:00:00.000Z
+}

@@ -4,6 +4,7 @@ export type UserRole = "doctor" | "patient" | "admin"
 
 export interface AppRequest extends express.Request {
     user?: {
+        id: string;
         token: string;
         role: UserRole;
         complete: boolean;

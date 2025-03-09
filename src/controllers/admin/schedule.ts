@@ -33,6 +33,11 @@ export const addWorkingDay: Controller = async (req, res, next) => {
         const {day} = req.body;
         if (typeof (day) === 'undefined' || Number(day) > 6 || Number(day) < 0)
             return res.status(400).json({message: "Invalid day selection!"}).end()
+        // check if it exists
+        console.log("Day: ", day)
+        const found = await api.scheduleDay.findOne({day: day})
+        if(found)
+            return res.status(400).json({message: "Working day already exists!"})
         const newWorkingDay = api.scheduleDay.create({day: day})
         await api.em.persistAndFlush(newWorkingDay)
             .then(() => {

@@ -22,15 +22,14 @@ const authorization: Controller = async (req, res, next) => {
         if (!token)
             throw new AuthError("Invalid or expired token, please log in and try again!", 401);
         const payload = jwt.verify(token, process.env.JWT ?? "");
-        console.log("Huh")
         if (typeof payload == "string")
             throw new AuthError("Your session is over, please log in and try again!");
-        req['user'] = {token: token, role: payload.role, complete: payload.complete}
+        req['user'] = {id: payload.id, token: token, role: payload.role, complete: payload.complete}
         next()
     } catch (error) {
+        console.error(error);
         if (error instanceof AuthError)
             return res.status(error.status).json({message: error.message});
-        console.error(error);
         res.status(401).json({
             message: "Authentication failed! Please log in and try again!"
         })

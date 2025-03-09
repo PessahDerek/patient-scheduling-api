@@ -1,6 +1,6 @@
 import {AppError, AuthError, Controller} from "../../libs/@types/global";
 import {api} from "../../app";
-import User from "../../database/models/user.entity";
+import User, {UserRole} from "../../database/models/user.entity";
 import {generateAuthToken, verifyFields} from "../../utils/methods/shortmethods";
 
 
@@ -11,7 +11,7 @@ const processPassword = (password: string, confirm: string) => {
         throw new AuthError("Passwords don't match", 400);
 }
 
-const userSignup: Controller = async (req, res, next) => {
+export const userSignup: Controller = async (req, res, next) => {
     try {
         verifyFields(['firstName', 'lastName', 'email', 'phone', 'password', 'confirm'], req.body)
         processPassword(req.body?.password, req.body?.confirm)
@@ -20,13 +20,16 @@ const userSignup: Controller = async (req, res, next) => {
         if (found)
             return res.status(400).json({message: "User already exists, if it is you, try to log in!"})
         //     save user
-        const newUser = api.em.create(User, req.body)
+        const newUser = api.users.create({
+            ...req.body,
+            role: UserRole.PATIENT
+        })
         newUser.password = req.body.password
         await api.em.persistAndFlush(newUser)
             .then(() => res.status(200).json({
                     message: "Account successfully created!",
                     token: generateAuthToken({id: newUser.id, role: newUser.role, complete: false}),
-                    role: newUser.role,
+                    user: newUser.simple()
                 }).end()
             )
     } catch (e) {
@@ -38,18 +41,18 @@ const userSignup: Controller = async (req, res, next) => {
 }
 
 
-export const handleCreateAccount: Controller = async (req, res, next) => {
-
-    switch (req.body.role) {
-        case "patient":
-            userSignup(req, res, next)
-            break
-        case "doctor":
-            break
-        default:
-            res.status(400).json({message: "Something went wrong with your request!"})
-    }
-}
+// export const handleCreateAccount: Controller = async (req, res, next) => {
+//
+//     switch (req.body.role) {
+//         case "patient":
+//             userSignup(req, res, next)
+//             break
+//         case "doctor":
+//             break
+//         default:
+//             res.status(400).json({message: "Something went wrong with your request!"})
+//     }
+// }
 
 
 

@@ -1,7 +1,7 @@
 import {AppError, Controller} from "../../libs/@types/global";
 import {api} from "../../app";
 import User, {UserRole} from "../../database/models/user.entity";
-import {generateAuthToken, passwordsMatch, verifyFields} from "../../utils/methods/shortmethods";
+import {generateAuthToken, handleError, passwordsMatch, verifyFields} from "../../utils/methods/shortmethods";
 
 
 const adminLogin: Controller = async (req, res, next) => {
@@ -13,16 +13,15 @@ const adminLogin: Controller = async (req, res, next) => {
         if (found) {
             // compare passwords
             if (passwordsMatch(req.body.password, found.password)) {
-                console.log(`\tEnded: ${Date.now()}`)
                 return res.status(200).json({
                     message: "Welcome back!",
                     token: generateAuthToken({id: found.id, role: found.role, complete: found.complete()}), // todo: modify to assess profile completion,
-                    user:{
+                    user: {
                         firstName: found.firstName,
                         role: found.role,
                         gender: found.gender,
                     }
-                }).end(()=>{
+                }).end(() => {
                     console.log(`\tEnded final: ${Date.now()}`)
                 })
             }
@@ -67,12 +66,42 @@ const adminLogin: Controller = async (req, res, next) => {
 }
 
 
+export const userLogin: Controller = async (req, res, next) => {
+    try {
+        const {contact, password} = req.body;
+        if (!contact || !password)
+            return res.status(200).json({message: "All field are required!"})
+        const found = await api.users.findOne({
+            $or: [
+                {email: contact}, {phone: contact}
+            ]
+        }, {populate: ["password"]})
+        if (!found)
+            return res.status(400).json({message: "No user account found. Verify credentials or try signing up instead!"})
+        const match = passwordsMatch(password, found.password)
+        if (!match)
+            return res.status(403).json({message: "Invalid credentials, please try again!."})
+
+        res.status(200).json({
+            message: "Welcome back!",
+            token: generateAuthToken({id: found.id, role: found.role, complete: found.complete()}), // todo: modify to assess profile completion,
+            user: found.simple()
+        })
+    } catch (err) {
+        handleError(err, res, "Sorry something went wrong trying to sign you in!")
+    }
+}
+
+
 export const handleUserLogins: Controller = (req, res, next) => {
+    console.log(req.body)
+
     switch (req.body.role) {
         case "admin":
             adminLogin(req, res, next)
             break;
         default:
-            res.status(400).json({message: "Something went wrong with your request, please refresh and try again!"})
+            userLogin(req, res, next)
+        // res.status(400).json({message: "Something went wrong with your request, please refresh and try again!"})
     }
 }

@@ -20,7 +20,7 @@ const config: Options = {
     migrations: {
         pathTs: "./src/database/migrations/",
     },
-    debug: true,
+    debug: false,
     preferTs: true,
 }
 
