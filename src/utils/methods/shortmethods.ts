@@ -20,7 +20,6 @@ export const hashString = (str: string): string => {
     return bcrypt.hashSync(str, 10);
 }
 export const passwordsMatch = (password: string, hash: string) => {
-    console.log("\tStarted: " + Date.now())
     return bcrypt.compareSync(password, hash);
 }
 

@@ -2,7 +2,7 @@ import express from "express";
 import authorization, {adminAuth} from "../middleware/authorization";
 import {addUser} from "../controllers/admin";
 import {addWorkingDay, getSchedule, scheduleDoctor} from "../controllers/admin";
-import {createAppointment} from "../controllers/admin/appointments";
+import {createAppointment, markAppointmentComplete} from "../controllers/admin/appointments";
 
 
 const adminRoutes = express.Router();
@@ -15,6 +15,7 @@ adminRoutes
     .post("/add-working-day", addWorkingDay)
     .post("/schedule-doctor", scheduleDoctor)
     .post("/create-appointment", createAppointment)
+    .post("/mark-app-complete", markAppointmentComplete)
 
 export default adminRoutes;
 

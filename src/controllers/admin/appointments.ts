@@ -56,8 +56,24 @@ export const createAppointment: Controller = async (req, res) => {
                 res.status(200).json({message: "Appointment successfully created!"})
             })
     } catch (err) {
-        console.log(err)
         handleError(err, res, "Sorry, something went wrong trying to create appointment! Please try again!");
+    }
+}
+
+export const markAppointmentComplete: Controller = async (req, res) => {
+    try {
+        const {appointmentId} = req.body;
+        const found = await api.appointments.findOne(appointmentId);
+        if (!found)
+            return res.status(400).json({message: "Appointment not found, please refresh and try again!"})
+        const valid = found.status !== AppStatus.COMPLETED && found.status !== AppStatus.CANCELLED && found.status !== AppStatus.MISSED
+        if (!valid)
+            return res.status(400).json({message: "Appointment cannot be marked as complete!"}).end()
+        found.status = AppStatus.COMPLETED
+        await api.em.persistAndFlush(found)
+        return res.status(200).json({message: "Appointment successfully completed!"})
+    } catch (err) {
+        handleError(err, res, "Sorry, something went wrong trying to mark appointment complete!")
     }
 }
 
